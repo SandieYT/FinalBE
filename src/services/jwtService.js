@@ -1,103 +1,145 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
 
 dotenv.config();
 
 const jwtService = {
   generateAccessToken: (payload) => {
     try {
-      if (!payload) throw new Error("Payload is required for token generation");
+      if (!payload)
+        throw new AppError(ERROR_TYPES.VALIDATION_ERROR, {
+          field: "payload",
+          message: "Payload is required",
+        });
+
       if (!process.env.ACCESS_TOKEN) {
-        throw new Error("Access token is not configured");
+        throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+          config: "ACCESS_TOKEN",
+          message: "Access token secret not configured",
+        });
       }
 
       return jwt.sign({ data: payload }, process.env.ACCESS_TOKEN, {
         expiresIn: "15m",
       });
     } catch (error) {
-      console.error("[JWT] Access token generation failed:", error.message);
-      throw new Error(`Access token generation failed: ${error.message}`);
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "token_generation",
+        tokenType: "access",
+        rawError: error.message,
+      });
     }
   },
 
   generateRefreshToken: (payload) => {
     try {
-      if (!payload) throw new Error("Payload is required for token generation");
+      if (!payload)
+        throw new AppError(ERROR_TYPES.VALIDATION_ERROR, {
+          field: "payload",
+          message: "Payload is required",
+        });
+
       if (!process.env.REFRESH_TOKEN) {
-        throw new Error("Refresh token is not configured");
+        throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+          config: "REFRESH_TOKEN",
+          message: "Refresh token secret not configured",
+        });
       }
 
       return jwt.sign({ data: payload }, process.env.REFRESH_TOKEN, {
         expiresIn: "7d",
       });
     } catch (error) {
-      console.error("[JWT] Refresh token generation failed:", error.message);
-      throw new Error(`Refresh token generation failed: ${error.message}`);
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "token_generation",
+        tokenType: "refresh",
+        rawError: error.message,
+      });
     }
   },
 
   verifyAccessToken: (token) => {
     try {
-      if (!token) throw new Error("No access token provided");
+      if (!token)
+        throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+          issue: "missing_token",
+          tokenType: "access",
+        });
+
       if (!process.env.ACCESS_TOKEN) {
-        throw new Error("Access token is not configured");
+        throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+          config: "ACCESS_TOKEN",
+          message: "Access token secret not configured",
+        });
       }
 
       const cleanToken = token.replace("Bearer ", "");
-      return {
-        valid: true,
-        decoded: jwt.verify(cleanToken, process.env.ACCESS_TOKEN),
-      };
-    } catch (error) {
-      console.error("[JWT] Access token verification failed:", error.message);
+      const decoded = jwt.verify(cleanToken, process.env.ACCESS_TOKEN);
 
       return {
-        valid: false,
-        message: "Invalid access token",
-        error: error.message,
-        expired: error.name === "TokenExpiredError",
-        code:
-          error.name === "TokenExpiredError"
-            ? "TOKEN_EXPIRED"
-            : "INVALID_TOKEN",
+        valid: true,
+        decoded,
       };
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        throw new AppError(ERROR_TYPES.TOKEN_EXPIRED, {
+          tokenType: "access",
+          expiredAt: error.expiredAt,
+        });
+      }
+      throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+        tokenType: "access",
+        rawError: error.message,
+      });
     }
   },
 
   verifyRefreshToken: (token) => {
     try {
-      if (!token) throw new Error("No refresh token provided");
+      if (!token)
+        throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+          issue: "missing_token",
+          tokenType: "refresh",
+        });
+
       if (!process.env.REFRESH_TOKEN) {
-        throw new Error("Refresh token is not configured");
+        throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+          config: "REFRESH_TOKEN",
+          message: "Refresh token secret not configured",
+        });
       }
+
+      const decoded = jwt.verify(token, process.env.REFRESH_TOKEN);
 
       return {
         valid: true,
-        decoded: jwt.verify(token, process.env.REFRESH_TOKEN),
+        decoded,
       };
     } catch (error) {
-      console.error("[JWT] Refresh token verification failed:", error.message);
-
-      return {
-        valid: false,
-        message: "Invalid refresh token",
-        error: error.message,
-        expired: error.name === "TokenExpiredError",
-        code:
-          error.name === "TokenExpiredError"
-            ? "TOKEN_EXPIRED"
-            : "INVALID_TOKEN",
-      };
+      if (error.name === "TokenExpiredError") {
+        throw new AppError(ERROR_TYPES.TOKEN_EXPIRED, {
+          tokenType: "refresh",
+          expiredAt: error.expiredAt,
+        });
+      }
+      throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+        tokenType: "refresh",
+        rawError: error.message,
+      });
     }
   },
 
   refreshTokenPair: async (refreshToken) => {
     try {
-      if (!refreshToken) throw new Error("Refresh token is required");
+      if (!refreshToken)
+        throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+          issue: "missing_token",
+          tokenType: "refresh",
+        });
 
-      const { valid, decoded, message } =
-        jwtService.verifyRefreshToken(refreshToken);
-      if (!valid) throw new Error(message);
+      const { valid, decoded } = jwtService.verifyRefreshToken(refreshToken);
+      if (!valid) throw new AppError(ERROR_TYPES.INVALID_TOKEN);
 
       const accessToken = jwtService.generateAccessToken(decoded.data);
       const newRefreshToken = jwtService.generateRefreshToken(decoded.data);
@@ -109,8 +151,10 @@ const jwtService = {
         message: "Token pair refreshed successfully",
       };
     } catch (error) {
-      console.error("[JWT] Token refresh failed:", error.message);
-      throw new Error(`Token refresh failed: ${error.message}`);
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "token_refresh",
+        rawError: error.message,
+      });
     }
   },
 };

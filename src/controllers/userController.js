@@ -1,4 +1,5 @@
 import userService from "../services/userService.js";
+import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
 
 const userController = {
   createUser: async (req, res) => {
@@ -12,35 +13,40 @@ const userController = {
       const missingFields = requiredFields.filter((field) => !req.body[field]);
 
       if (missingFields.length > 0) {
-        return res.status(400).json({
-          status: "error",
-          message: `Required fields missing: ${missingFields.join(", ")}`,
-          errorCode: "MISSING_FIELDS",
+        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
+          missingFields,
+          message: `Missing: ${missingFields.join(", ")}`,
         });
       }
 
       if (req.body.password !== req.body.confirmPassword) {
-        return res.status(400).json({
-          status: "error",
-          message: "Password confirmation does not match",
-          errorCode: "PASSWORD_MISMATCH",
-        });
+        throw new AppError(ERROR_TYPES.PASSWORD_MISMATCH);
       }
 
       const result = await userService.createUser(req.body);
-      return res.status(201).json(result);
+      res.status(201).json(result);
     } catch (error) {
-      const statusCode =
-        error.message.includes("already exists") ||
-        error.message.includes("Validation failed") ||
-        error.message.includes("invalid")
-          ? 400
-          : 500;
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
 
-      return res.status(statusCode).json({
-        status: "error",
-        message: error.message || "Internal server error",
-        errorCode: statusCode === 400 ? "VALIDATION_ERROR" : "SERVER_ERROR",
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "user registration",
+          },
+        },
       });
     }
   },
@@ -50,26 +56,83 @@ const userController = {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({
-          status: "error",
-          message: "Both email and password are required",
-          errorCode: "MISSING_CREDENTIALS",
+        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
+          missingFields: [
+            !email ? "email" : null,
+            !password ? "password" : null,
+          ].filter(Boolean),
+          message: "Email and password are required",
         });
       }
 
       const result = await userService.loginUser({ email, password });
-      return res.status(200).json(result);
+      res.status(200).json(result);
     } catch (error) {
-      const statusCode =
-        error.message.includes("Authentication failed") ||
-        error.message.includes("Account error")
-          ? 400
-          : 500;
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: {
+              ...error.details,
+              attemptedEmail: req.body.email,
+            },
+          },
+        });
+      }
 
-      return res.status(statusCode).json({
-        status: "error",
-        message: error.message || "Internal server error",
-        errorCode: statusCode === 400 ? "AUTHENTICATION_ERROR" : "SERVER_ERROR",
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "user login",
+          },
+        },
+      });
+    }
+  },
+
+  refreshToken: async (req, res) => {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+          issue: "missing_token",
+          message: "Refresh token is required",
+        });
+      }
+
+      const result = await userService.refreshToken(refreshToken);
+      res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof AppError) {
+        const status =
+          error.code === ERROR_TYPES.TOKEN_EXPIRED.code ? 401 : error.status;
+        return res.status(status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "token refresh",
+          },
+        },
       });
     }
   },
