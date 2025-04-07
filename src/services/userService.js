@@ -120,6 +120,7 @@ const userService = {
         data: {
           accessToken,
           userId: user._id,
+          username: user.username,
           email: user.email,
           role: user.role,
         },
@@ -220,6 +221,43 @@ const userService = {
 
       throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
         operation: "token_refresh",
+        rawError: error.message,
+      });
+    }
+  },
+
+  logoutUser: async (refreshToken) => {
+    try {
+      if (!refreshToken) {
+        return { success: true };
+      }
+
+      const { decoded } = jwtService.verifyRefreshToken(refreshToken);
+
+      await User.updateOne(
+        { _id: decoded.data.userId },
+        { $unset: { refresh_token: 1 } }
+      );
+
+      return { success: true };
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        throw new AppError(ERROR_TYPES.TOKEN_EXPIRED, {
+          operation: "user logout",
+          tokenType: "refresh",
+        });
+      }
+
+      if (error.name === "JsonWebTokenError") {
+        throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+          operation: "user logout",
+          tokenType: "refresh",
+          reason: error.message,
+        });
+      }
+
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "user logout",
         rawError: error.message,
       });
     }
