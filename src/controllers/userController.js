@@ -69,14 +69,14 @@ const userController = {
 
       res.cookie("accessToken", result.data.accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "strict",
         maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", result.data.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
@@ -135,14 +135,14 @@ const userController = {
 
       res.cookie("accessToken", result.data.accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "strict",
         maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", result.data.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
@@ -200,9 +200,9 @@ const userController = {
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-        message: "Logout successful",
+        message: "No active session. Already logged out.",
       });
     } catch (error) {
       if (error instanceof AppError) {

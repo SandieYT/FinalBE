@@ -119,6 +119,7 @@ const userService = {
         success: true,
         data: {
           accessToken,
+          refreshToken,
           userId: user._id,
           username: user.username,
           email: user.email,
