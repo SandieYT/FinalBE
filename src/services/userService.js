@@ -120,10 +120,6 @@ const userService = {
         data: {
           accessToken,
           refreshToken,
-          userId: user._id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
         },
         message: "Login successful",
       };
