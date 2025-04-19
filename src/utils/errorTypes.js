@@ -56,6 +56,32 @@ export const ERROR_TYPES = {
     status: 500,
     message: "Internal server error",
   },
+  FORBIDDEN: {
+    code: "PERM_001",
+    status: 403,
+    message: "Forbidden - insufficient permissions",
+  },
+
+  // Rate limiting
+  TOO_MANY_REQUESTS: {
+    code: "RATE_001",
+    status: 429,
+    message: "Too many requests",
+  },
+
+  // Maintenance
+  SERVICE_UNAVAILABLE: {
+    code: "MAINT_001",
+    status: 503,
+    message: "Service temporarily unavailable",
+  },
+
+  // Account status
+  ACCOUNT_INACTIVE: {
+    code: "ACC_001",
+    status: 403,
+    message: "Account is inactive",
+  },
 };
 
 export class AppError extends Error {

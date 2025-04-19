@@ -1,9 +1,62 @@
+import mongoose from "mongoose";
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwtService from "./jwtService.js";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
 
 const userService = {
+  getUser: async (userId) => {
+    try {
+      if (!userId) {
+        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
+          missingFields: ["userId"],
+          message: "User ID is required",
+        });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new AppError(ERROR_TYPES.VALIDATION_ERROR, {
+          invalidField: "userId",
+          message: "Invalid user ID format",
+        });
+      }
+
+      const user = await User.findById(userId).select(
+        "-password -refresh_token -__v"
+      );
+
+      if (!user) {
+        throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
+          userId,
+          message: "User not found",
+        });
+      }
+
+      if (!user.isActive) {
+        throw new AppError(ERROR_TYPES.FORBIDDEN, {
+          userId,
+          message: "User is not active",
+        });
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof AppError) {
+        if (!error.details) {
+          error.details = {
+            operation: "get user data",
+            userId,
+          };
+        }
+        throw error;
+      }
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "get user data",
+        rawError: error.message,
+      });
+    }
+  },
+
   createUser: async (data) => {
     try {
       const existingUser = await User.findOne({

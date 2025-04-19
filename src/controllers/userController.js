@@ -2,6 +2,53 @@ import userService from "../services/userService.js";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
 
 const userController = {
+  getUser: async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      if (!userId) {
+        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
+          missingFields: ["userId"],
+          message: "User ID is required",
+        });
+      }
+      const result = await userService.getUser(userId);
+      if (!result) {
+        throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
+          message: "User not found",
+          details: { userId },
+        });
+      }
+      res.status(200).json({
+        success: true,
+        data: result,
+        message: "User data retrieved successfully",
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "get user data",
+          },
+        },
+      });
+    }
+  },
+
   createUser: async (req, res) => {
     try {
       const requiredFields = [
