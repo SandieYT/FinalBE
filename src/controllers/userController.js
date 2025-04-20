@@ -276,6 +276,48 @@ const userController = {
       });
     }
   },
+
+  listUsers: async (req, res) => {
+    try {
+      const { page = 1, limit = 10, search = "" } = req.query;
+
+      const result = await userService.listUsers({
+        page,
+        limit: Math.min(limit, 100),
+        search,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination,
+        message: "Users retrieved successfully",
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "list users",
+          },
+        },
+      });
+    }
+  },
 };
 
 export default userController;

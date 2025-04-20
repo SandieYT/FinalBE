@@ -312,6 +312,44 @@ const userService = {
       });
     }
   },
+
+  listUsers: async (options = {}) => {
+    try {
+      const { page = 1, limit = 10, search = "" } = options;
+      const skip = (page - 1) * limit;
+
+      const query = {
+        $or: [
+          { username: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      };
+
+      const users = await User.find(query)
+        .select("-password -refresh_token -__v")
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const total = await User.countDocuments(query);
+
+      return {
+        success: true,
+        data: users,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "list users",
+        rawError: error.message,
+      });
+    }
+  },
 };
 
 export default userService;
