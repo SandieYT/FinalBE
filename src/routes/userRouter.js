@@ -9,6 +9,6 @@ router.post("/register", userController.createUser);
 router.post("/login", userController.loginUser);
 router.post("/refresh-token", userController.refreshToken);
 router.post("/logout", authenticate, userController.logoutUser);
-router.get("/admin/users", authenticate, authorize(['admin']), userController.listUsers);
+router.get("/admin", authenticate, authorize(['admin']), userController.listUsers);
 
 export default router;
