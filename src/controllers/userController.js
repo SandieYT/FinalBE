@@ -318,6 +318,72 @@ const userController = {
       });
     }
   },
+
+  deleteUser: async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const currentUserId = req.user.userId;
+
+      const result = await userService.deleteUser(userId, currentUserId);
+      res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "delete user",
+          },
+        },
+      });
+    }
+  },
+
+  updateUser: async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const updateData = req.body;
+
+      const result = await userService.updateUser(userId, updateData);
+      res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "update user",
+          },
+        },
+      });
+    }
+  },
 };
 
 export default userController;

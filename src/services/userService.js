@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwtService from "./jwtService.js";
+import { updateUserSchema } from "../middlewares/userValidation.js";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
 
 const userService = {
@@ -346,6 +347,131 @@ const userService = {
     } catch (error) {
       throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
         operation: "list users",
+        rawError: error.message,
+      });
+    }
+  },
+
+  deleteUser: async (userId, currentUserId) => {
+    try {
+      if (!userId) {
+        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
+          missingFields: ["userId"],
+          message: "User ID is required",
+        });
+      }
+
+      if (userId === currentUserId) {
+        throw new AppError(ERROR_TYPES.FORBIDDEN, {
+          message: "Cannot delete your own account",
+        });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new AppError(ERROR_TYPES.VALIDATION_ERROR, {
+          invalidField: "userId",
+          message: "Invalid user ID format",
+        });
+      }
+
+      const user = await User.findByIdAndDelete(userId);
+      if (!user) {
+        throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
+          userId,
+          message: "User not found",
+        });
+      }
+
+      return {
+        success: true,
+        message: "User deleted successfully",
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        if (!error.details) {
+          error.details = {
+            operation: "delete user",
+            userId,
+          };
+        }
+        throw error;
+      }
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "delete user",
+        rawError: error.message,
+      });
+    }
+  },
+
+  updateUser: async (userId, updateData) => {
+    try {
+      const { error, value } = updateUserSchema.validate(updateData, {
+        abortEarly: false,
+        stripUnknown: true,
+      });
+
+      if (error) {
+        const validationErrors = error.details.reduce((acc, curr) => {
+          acc[curr.path[0]] = curr.message;
+          return acc;
+        }, {});
+
+        throw new AppError(ERROR_TYPES.VALIDATION_ERROR, {
+          errors: validationErrors,
+          message: "Validation failed",
+        });
+      }
+
+      if (value.username) {
+        const existingUser = await User.findOne({
+          username: value.username,
+          _id: { $ne: userId },
+        });
+        if (existingUser) {
+          throw new AppError(ERROR_TYPES.VALIDATION_ERROR, {
+            errors: { username: "Username is already taken" },
+          });
+        }
+      }
+
+      if (value.email) {
+        const existingUser = await User.findOne({
+          email: value.email,
+          _id: { $ne: userId },
+        });
+        if (existingUser) {
+          throw new AppError(ERROR_TYPES.VALIDATION_ERROR, {
+            errors: { email: "Email is already registered" },
+          });
+        }
+      }
+
+      if (value.password) {
+        value.password = await bcrypt.hash(value.password, 10);
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $set: value },
+        { new: true, select: "-password -refresh_token -__v" }
+      );
+
+      if (!updatedUser) {
+        throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
+          userId,
+          message: "User not found",
+        });
+      }
+
+      return {
+        success: true,
+        data: updatedUser,
+        message: "User updated successfully",
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "update user",
         rawError: error.message,
       });
     }

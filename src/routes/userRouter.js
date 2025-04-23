@@ -10,5 +10,7 @@ router.post("/login", userController.loginUser);
 router.post("/refresh-token", userController.refreshToken);
 router.post("/logout", authenticate, userController.logoutUser);
 router.get("/admin", authenticate, authorize(['admin']), userController.listUsers);
+router.delete("/delete/:userId", authenticate, authorize(["admin"]), userController.deleteUser);
+router.put("/update/:userId", authenticate, authorize(["admin"]), userController.updateUser);
 
 export default router;
