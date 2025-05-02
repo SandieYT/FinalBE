@@ -2,15 +2,15 @@ import express from "express";
 const router = express.Router();
 
 import userController from "../controllers/userController.js";
-import { authenticate, authorize } from "../middlewares/authMiddleware.js";
+import { authenticate, authorize, handleTokenRefresh } from "../middlewares/authMiddleware.js";
 
-router.get("/profile", authenticate, userController.getUser);
 router.post("/register", userController.createUser); 
 router.post("/login", userController.loginUser);
 router.post("/refresh-token", userController.refreshToken);
 router.post("/logout", authenticate, userController.logoutUser);
-router.get("/admin", authenticate, authorize(['admin']), userController.listUsers);
-router.delete("/delete/:userId", authenticate, authorize(["admin"]), userController.deleteUser);
-router.put("/update/:userId", authenticate, authorize(["admin"]), userController.updateUser);
+router.get("/profile", authenticate, handleTokenRefresh, userController.getUser);
+router.get("/admin", authenticate, handleTokenRefresh, authorize(['admin']), userController.listUsers);
+router.delete("/delete/:userId", authenticate, handleTokenRefresh, authorize(["admin"]), userController.deleteUser);
+router.put("/update/:userId", authenticate, handleTokenRefresh, authorize(["admin"]), userController.updateUser);
 
 export default router;

@@ -20,7 +20,21 @@ export const ERROR_TYPES = {
     status: 401,
     message: "Invalid token",
   },
-
+  REFRESH_TOKEN_EXPIRED: {
+    code: "AUTH_005",
+    status: 401,
+    message: "Refresh token expired - please login again",
+  },
+  TOKEN_REVOKED: {
+    code: "AUTH_006",
+    status: 401,
+    message: "Token has been revoked",
+  },
+  AUTHORIZATION_HEADER_MISSING: {
+    code: "AUTH_007",
+    status: 401,
+    message: "Authorization header is missing",
+  },
   // Validation
   VALIDATION_ERROR: {
     code: "VAL_001",
@@ -81,6 +95,18 @@ export const ERROR_TYPES = {
     code: "ACC_001",
     status: 403,
     message: "Account is inactive",
+  },
+
+  //CSRF (Cross-Site Request Forgery) protection errors
+  CSRF_TOKEN_MISSING: {
+    code: "SEC_001",
+    status: 403,
+    message: "CSRF token missing",
+  },
+  CSRF_TOKEN_INVALID: {
+    code: "SEC_002",
+    status: 403,
+    message: "Invalid CSRF token",
   },
 };
 

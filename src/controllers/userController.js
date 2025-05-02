@@ -5,12 +5,6 @@ const userController = {
   getUser: async (req, res) => {
     try {
       const userId = req.user.userId;
-      if (!userId) {
-        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
-          missingFields: ["userId"],
-          message: "User ID is required",
-        });
-      }
       const result = await userService.getUser(userId);
       if (!result) {
         throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
