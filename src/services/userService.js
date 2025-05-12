@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwtService from "./jwtService.js";
 import { updateUserSchema } from "../middlewares/userValidation.js";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
+import { json } from "express";
 
 const userService = {
   getUser: async (userId) => {
@@ -30,13 +31,6 @@ const userService = {
         throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
           userId,
           message: "User not found",
-        });
-      }
-
-      if (!user.isActive) {
-        throw new AppError(ERROR_TYPES.FORBIDDEN, {
-          userId,
-          message: "User is not active",
         });
       }
 
@@ -78,12 +72,14 @@ const userService = {
         password: await bcrypt.hash(data.password, 10),
       });
 
+      user.profile_picture = `https://api.dicebear.com/5.x/initials/svg?seed=${user.username}`
+
       const userObj = user.toObject();
       delete userObj.password;
       delete userObj.access_token;
       delete userObj.refresh_token;
       delete userObj.__v;
-
+      console.log(user)
       return {
         success: true,
         data: userObj,
@@ -144,11 +140,18 @@ const userService = {
         });
       }
 
+      console.log(user.profile_picture)
+
+      if (!user.profile_picture) {
+        user.profile_picture = `https://api.dicebear.com/5.x/initials/svg?seed=${user.username}`
+      }
+
       const accessToken = jwtService.generateAccessToken({
         userId: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
+        profile_picture: user.profile_picture,
         isActive: user.isActive,
       });
 
@@ -409,7 +412,6 @@ const userService = {
         abortEarly: false,
         stripUnknown: true,
       });
-
       if (error) {
         const validationErrors = error.details.reduce((acc, curr) => {
           acc[curr.path[0]] = curr.message;

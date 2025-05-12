@@ -4,7 +4,7 @@ import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
 const userController = {
   getUser: async (req, res) => {
     try {
-      const userId = req.user.userId;
+      const userId = req.params.userId;
       const result = await userService.getUser(userId);
       if (!result) {
         throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
@@ -143,7 +143,6 @@ const userController = {
           },
         });
       }
-
       res.status(500).json({
         success: false,
         error: {

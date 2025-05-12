@@ -60,7 +60,7 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-export const authorize = (roles = []) => {
+export const authorize = (roles = [], options = {}) => {
   return (req, res, next) => {
     try {
       if (!req.user) {
@@ -70,7 +70,14 @@ export const authorize = (roles = []) => {
         });
       }
 
-      if (!roles.includes(req.user.role)) {
+      const allowSelf = options.allowSelf || false;
+      const isSelfAction =
+        allowSelf &&
+        req.params.userId &&
+        req.user._id &&
+        req.user._id.toString() === req.params.userId;
+
+      if (!isSelfAction && !roles.includes(req.user.role)) {
         throw new AppError(ERROR_TYPES.FORBIDDEN, {
           requiredRoles: roles,
           userRole: req.user.role,
@@ -78,6 +85,7 @@ export const authorize = (roles = []) => {
           operation: "authorization",
         });
       }
+
       next();
     } catch (error) {
       const response = {
