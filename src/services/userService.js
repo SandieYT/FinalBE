@@ -196,6 +196,98 @@ const userService = {
     }
   },
 
+  loginWithGoogle: async (googleUser) => {
+    try {
+      const { email, name, picture } = googleUser;
+
+      if (!email) {
+        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
+          missingField: "email",
+          message: "Email is required",
+        });
+      }
+
+      const existingUser = await User.findOne({ email }).select(
+        "+password +refresh_token"
+      );
+
+      if (existingUser) {
+        const accessToken = jwtService.generateAccessToken({
+          userId: existingUser._id,
+          username: existingUser.username,
+          email: existingUser.email,
+          role: existingUser.role,
+          isActive: existingUser.isActive,
+        });
+
+        const refreshToken = jwtService.generateRefreshToken({
+          userId: existingUser._id,
+        });
+
+        await User.updateOne(
+          { _id: existingUser._id },
+          {
+            refresh_token: refreshToken,
+            lastLogin: new Date(),
+          }
+        );
+
+        return {
+          success: true,
+          data: {
+            accessToken,
+            refreshToken,
+            userId: existingUser._id,
+          },
+          message: "Login successful",
+        };
+      }
+
+      const newUser = await User.create({
+        email,
+        username: name || email.split("@")[0],
+        password: null,
+        profilePicture: picture || null,
+      });
+
+      const accessToken = jwtService.generateAccessToken({
+        userId: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role,
+        isActive: newUser.isActive,
+      });
+
+      const refreshToken = jwtService.generateRefreshToken({
+        userId: newUser._id,
+      });
+
+      await User.updateOne(
+        { _id: newUser._id },
+        {
+          refresh_token: refreshToken,
+          lastLogin: new Date(),
+        }
+      );
+
+      return {
+        success: true,
+        data: {
+          accessToken,
+          refreshToken,
+          userId: newUser._id,
+        },
+        message: "Google login successful",
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "google login",
+        rawError: error.message,
+      });
+    }
+  },
+  
   refreshToken: async (refreshToken) => {
     try {
       if (!refreshToken) {

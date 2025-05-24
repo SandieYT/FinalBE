@@ -1,5 +1,8 @@
 import userService from "../services/userService.js";
+import { OAuth2Client } from "google-auth-library";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
+
+const client = new OAuth2Client(process.env.GG_CLIENT_ID);
 
 const userController = {
   getUser: async (req, res) => {
@@ -152,6 +155,85 @@ const userController = {
           details: {
             rawError: error.message,
             operation: "user login",
+          },
+        },
+      });
+    }
+  },
+
+  loginWithGoogle: async (req, res) => {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        throw new AppError(ERROR_TYPES.MISSING_FIELDS, {
+          missingFields: ["token"],
+          message: "Google token is required",
+        });
+      }
+
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GG_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
+          message: "Google token is invalid or missing email",
+        });
+      }
+
+      const { sub: googleId, email, name, picture } = payload;
+
+      const result = await userService.loginWithGoogle({
+        userId: googleId,
+        email,
+        name,
+        picture,
+      });
+
+      res.cookie("accessToken", result.data.accessToken, {
+        httpOnly: true,
+        secure: false, 
+        sameSite: "strict",
+        maxAge: 15 * 60 * 1000, 
+      });
+
+      res.cookie("refreshToken", result.data.refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          accessToken: result.data.accessToken,
+        },
+        message: result.message || "Google login successful",
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: "Google login failed",
+          details: {
+            rawError: error.message,
+            operation: "google login",
           },
         },
       });
