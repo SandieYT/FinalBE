@@ -13,5 +13,7 @@ export const updateUserSchema = Joi.object({
   }),
   role: Joi.string().valid("user", "admin"),
   isActive: Joi.boolean(),
-  profile_picture: Joi.string()
+  profile_picture: Joi.string(),
+  description: Joi.string(),
+  thumbnail: Joi.string()
 }).min(1);

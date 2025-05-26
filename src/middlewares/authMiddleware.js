@@ -74,8 +74,8 @@ export const authorize = (roles = [], options = {}) => {
       const isSelfAction =
         allowSelf &&
         req.params.userId &&
-        req.user._id &&
-        req.user._id.toString() === req.params.userId;
+        req.user.userId &&
+        req.user.userId === req.params.userId;
 
       if (!isSelfAction && !roles.includes(req.user.role)) {
         throw new AppError(ERROR_TYPES.FORBIDDEN, {

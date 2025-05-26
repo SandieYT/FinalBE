@@ -73,13 +73,12 @@ const userService = {
       });
 
       user.profile_picture = `https://api.dicebear.com/5.x/initials/svg?seed=${user.username}`
-
+      user.description = `Hi! I am ${user.username}}.`
       const userObj = user.toObject();
       delete userObj.password;
       delete userObj.access_token;
       delete userObj.refresh_token;
       delete userObj.__v;
-      console.log(user)
       return {
         success: true,
         data: userObj,
@@ -140,10 +139,12 @@ const userService = {
         });
       }
 
-      console.log(user.profile_picture)
-
       if (!user.profile_picture) {
         user.profile_picture = `https://api.dicebear.com/5.x/initials/svg?seed=${user.username}`
+      }
+
+      if (!user.description) {
+        user.description = `Hi! I am ${user.username}}.`
       }
 
       const accessToken = jwtService.generateAccessToken({
@@ -153,6 +154,8 @@ const userService = {
         role: user.role,
         profile_picture: user.profile_picture,
         isActive: user.isActive,
+        description: user.description,
+        thumbnail: user.thumbnail
       });
 
       const refreshToken = jwtService.generateRefreshToken({
@@ -241,6 +244,9 @@ const userService = {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
+        profile_picture: user.profile_picture,
+        description: user.description,
+        thumbnail: user.thumbnail
       });
 
       const newRefreshToken = jwtService.generateRefreshToken({
