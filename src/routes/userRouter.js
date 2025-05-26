@@ -6,6 +6,7 @@ import { authenticate, authorize, handleTokenRefresh } from "../middlewares/auth
 
 router.post("/register", userController.createUser); 
 router.post("/login", userController.loginUser);
+router.post("/google-login", userController.loginWithGoogle);
 router.post("/refresh-token", userController.refreshToken);
 router.post("/logout", authenticate, userController.logoutUser);
 router.get("/profile", authenticate, handleTokenRefresh, userController.getUser);
