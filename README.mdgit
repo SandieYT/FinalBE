@@ -1,0 +1,1 @@
+"# FinalBE"  initgit add README.mdgit commit -m "first commit"git branch -M maingit remote add project https://github.com/SandieYT/FinalBE.gitgit push -u project main
