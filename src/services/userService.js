@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import User from "../models/userModel.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwtService from "./jwtService.js";
 import { updateUserSchema } from "../middlewares/userValidation.js";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
