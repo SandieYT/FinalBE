@@ -9,14 +9,21 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = [
+  "https://final-fe-bj22.vercel.app",
+  "http://localhost:5173"
+];
 
-app.use(
-  cors({
-    origin: "https://final-fe-bj22.vercel.app/",
-    credentials: true,
-  })
-);
-
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 
