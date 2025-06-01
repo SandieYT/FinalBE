@@ -192,6 +192,8 @@ const userController = {
         picture,
       });
 
+      console.log(payload)
+      console.log(result)
       res.cookie("accessToken", result.data.accessToken, {
         httpOnly: true,
         secure: false, 
