@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import jwtService from "./jwtService.js";
 import { updateUserSchema } from "../middlewares/userValidation.js";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
+import { json } from "express";
 
 const userService = {
   getUser: async (userId) => {
@@ -30,13 +31,6 @@ const userService = {
         throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
           userId,
           message: "User not found",
-        });
-      }
-
-      if (!user.isActive) {
-        throw new AppError(ERROR_TYPES.FORBIDDEN, {
-          userId,
-          message: "User is not active",
         });
       }
 
@@ -78,12 +72,13 @@ const userService = {
         password: await bcrypt.hash(data.password, 10),
       });
 
+      user.profile_picture = `https://api.dicebear.com/5.x/initials/svg?seed=${user.username}`
+      user.description = `Hi! I am ${user.username}}.`
       const userObj = user.toObject();
       delete userObj.password;
       delete userObj.access_token;
       delete userObj.refresh_token;
       delete userObj.__v;
-
       return {
         success: true,
         data: userObj,
@@ -144,12 +139,23 @@ const userService = {
         });
       }
 
+      if (!user.profile_picture) {
+        user.profile_picture = `https://api.dicebear.com/5.x/initials/svg?seed=${user.username}`
+      }
+
+      if (!user.description) {
+        user.description = `Hi! I am ${user.username}}.`
+      }
+
       const accessToken = jwtService.generateAccessToken({
         userId: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
+        profile_picture: user.profile_picture,
         isActive: user.isActive,
+        description: user.description,
+        thumbnail: user.thumbnail
       });
 
       const refreshToken = jwtService.generateRefreshToken({
@@ -330,6 +336,9 @@ const userService = {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
+        profile_picture: user.profile_picture,
+        description: user.description,
+        thumbnail: user.thumbnail
       });
 
       const newRefreshToken = jwtService.generateRefreshToken({
@@ -501,7 +510,6 @@ const userService = {
         abortEarly: false,
         stripUnknown: true,
       });
-
       if (error) {
         const validationErrors = error.details.reduce((acc, curr) => {
           acc[curr.path[0]] = curr.message;

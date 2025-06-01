@@ -7,7 +7,7 @@ const client = new OAuth2Client(process.env.GG_CLIENT_ID);
 const userController = {
   getUser: async (req, res) => {
     try {
-      const userId = req.user.userId;
+      const userId = req.params.userId;
       const result = await userService.getUser(userId);
       if (!result) {
         throw new AppError(ERROR_TYPES.USER_NOT_FOUND, {
@@ -146,7 +146,6 @@ const userController = {
           },
         });
       }
-
       res.status(500).json({
         success: false,
         error: {
