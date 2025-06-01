@@ -111,9 +111,9 @@ const userService = {
         });
       }
 
-      const user = await User.findOne({ email }).select(
-        "+password +refresh_token"
-      );
+      let user = await User.findOne({
+        $or: [{ email }, { username: email }]
+      }).select("+password +refresh_token");
 
       if (!user) {
         throw new AppError(ERROR_TYPES.INVALID_CREDENTIALS, {
@@ -213,9 +213,9 @@ const userService = {
         });
       }
 
-      const existingUser = await User.findOne({ email }).select(
-        "+password +refresh_token"
-      );
+      let existingUser = await User.findOne({
+        $or: [{ email }, { username: name }]
+      }).select("+password +refresh_token");
 
       if (existingUser) {
         const accessToken = jwtService.generateAccessToken({
@@ -256,7 +256,8 @@ const userService = {
         email,
         username: name || email.split("@")[0],
         password: null,
-        profilePicture: picture || null,
+        profilePicture: picture || `https://api.dicebear.com/5.x/initials/svg?seed=${name}`,
+        description: `Hi! I am ${name}`
       });
 
       const accessToken = jwtService.generateAccessToken({
@@ -578,6 +579,41 @@ const userService = {
       if (error instanceof AppError) throw error;
       throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
         operation: "update user",
+        rawError: error.message,
+      });
+    }
+  },
+
+  updateUserPassword: async (userId, currentPassword, newPassword) => {
+      try {
+            const user = await User.findById(userId).select('+password');
+
+      if (!user) {
+        throw new AppError(404, ERROR_TYPES.USER_NOT_FOUND.code, 'User not found.');
+      }
+
+      const isMatch = bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        throw new AppError(401, ERROR_TYPES.INVALID_CREDENTIALS.code, 'Incorrect current password.');
+      }
+
+      if (newPassword.length < 6) {
+          throw new AppError(400, ERROR_TYPES.VALIDATION_ERROR.code, 'New password must be at least 6 characters long.');
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+
+      await user.save();
+
+      return {
+        success: true,
+        message: "Password updated successfully",
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
+        operation: "update user password",
         rawError: error.message,
       });
     }

@@ -13,6 +13,7 @@ router.get("/profile", authenticate, handleTokenRefresh, userController.getUser)
 router.get("/admin", authenticate, handleTokenRefresh, authorize(['admin']), userController.listUsers);
 router.delete("/delete/:userId", authenticate, handleTokenRefresh, authorize(["admin"]), userController.deleteUser);
 router.put("/update/:userId", authenticate, handleTokenRefresh, authorize(["admin"], { allowSelf: true }), userController.updateUser);
+router.put("/password/:userId", authenticate, handleTokenRefresh, authorize(["admin"], { allowSelf: true }), userController.updateUserPassword);
 router.get("/get/:userId", authenticate, handleTokenRefresh, authorize(["admin"], { allowSelf: true }), userController.getUser);
 
 export default router;

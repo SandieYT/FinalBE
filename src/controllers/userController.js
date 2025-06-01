@@ -192,9 +192,8 @@ const userController = {
         picture,
       });
 
-      console.log(payload)
-      console.log(result)
-      
+      console.log(result.data.accessToken)
+
       res.cookie("accessToken", result.data.accessToken, {
         httpOnly: true,
         secure: false, 
@@ -457,6 +456,49 @@ const userController = {
           details: {
             rawError: error.message,
             operation: "update user",
+          },
+        },
+      });
+    }
+  },
+
+  updateUserPassword: async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        throw new AppError(
+          400,
+          ERROR_TYPES.VALIDATION_ERROR.code,
+          'Both currentPassword and newPassword are required.',
+          { missingFields: ['currentPassword', 'newPassword'] }
+        );
+      }
+
+      const result = await userService.updateUserPassword(userId, currentPassword, newPassword);
+      res.status(200).json({ success: true, message: "Password updated successfully." });
+
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.status).json({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: ERROR_TYPES.INTERNAL_ERROR.code,
+          message: ERROR_TYPES.INTERNAL_ERROR.message,
+          details: {
+            rawError: error.message,
+            operation: "update user password",
           },
         },
       });
