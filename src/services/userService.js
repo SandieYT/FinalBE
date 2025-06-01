@@ -223,7 +223,10 @@ const userService = {
           username: existingUser.username,
           email: existingUser.email,
           role: existingUser.role,
+          profile_picture: existingUser.profile_picture,
           isActive: existingUser.isActive,
+          description: existingUser.description,
+          thumbnail: existingUser.thumbnail
         });
 
         const refreshToken = jwtService.generateRefreshToken({
