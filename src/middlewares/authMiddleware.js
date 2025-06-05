@@ -144,6 +144,7 @@ export const handleTokenRefresh = async (req, res, next) => {
       req.user = decoded.data;
       req.tokenRefreshed = true;
 
+      
       return next();
     } catch (error) {
       const code =

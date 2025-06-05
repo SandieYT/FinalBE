@@ -192,8 +192,6 @@ const userController = {
         picture,
       });
 
-      console.log(result.data.accessToken)
-
       res.cookie("accessToken", result.data.accessToken, {
         httpOnly: true,
         secure: false, 
@@ -239,7 +237,7 @@ const userController = {
         },
       });
     }
-  },
+  }, 
 
   refreshToken: async (req, res) => {
     try {

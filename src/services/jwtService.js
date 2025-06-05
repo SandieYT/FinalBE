@@ -21,7 +21,7 @@ const jwtService = {
       }
 
       return jwt.sign({ data: payload }, process.env.ACCESS_TOKEN, {
-        expiresIn: "15m",
+        expiresIn: "5s",
       });
     } catch (error) {
       throw new AppError(ERROR_TYPES.INTERNAL_ERROR, {
