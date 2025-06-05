@@ -343,9 +343,6 @@ const userService = {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
-        profile_picture: user.profile_picture,
-        description: user.description,
-        thumbnail: user.thumbnail
       });
 
       const newRefreshToken = jwtService.generateRefreshToken({
