@@ -7,11 +7,7 @@ export const authenticate = async (req, res, next) => {
   try {
     let token;
 
-    if (req.cookies?.accessToken) {
-      token = req.cookies.accessToken;
-    } else if (req.headers.authorization?.startsWith("Bearer ")) {
-      token = req.headers.authorization.split(" ")[1];
-    }
+    token = req.cookies.accessToken;
 
     if (!token) {
       throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
