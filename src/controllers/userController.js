@@ -3,6 +3,12 @@ import { OAuth2Client } from "google-auth-library";
 import { ERROR_TYPES, AppError } from "../utils/errorTypes.js";
 
 const client = new OAuth2Client(process.env.GG_CLIENT_ID);
+const isProduction = process.env.NODE_ENV === 'production';
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+};
 
 const userController = {
   getUser: async (req, res) => {
@@ -112,16 +118,12 @@ const userController = {
       const result = await userService.loginUser({ email, password });
 
       res.cookie("accessToken", result.data.accessToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", result.data.refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -193,16 +195,12 @@ const userController = {
       });
 
       res.cookie("accessToken", result.data.accessToken, {
-        httpOnly: true,
-        secure: false, 
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: 15 * 60 * 1000, 
       });
 
       res.cookie("refreshToken", result.data.refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -253,16 +251,12 @@ const userController = {
       const result = await userService.refreshToken(refreshToken);
 
       res.cookie("accessToken", result.data.accessToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", result.data.refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 

@@ -7,7 +7,13 @@ export const authenticate = async (req, res, next) => {
   try {
     let token;
 
-    token = req.cookies.accessToken;
+    if (req.cookies?.accessToken) {
+      token = req.cookies.accessToken;
+    } else if (req.headers.authorization?.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    console.log(req.headers)
 
     if (!token) {
       throw new AppError(ERROR_TYPES.INVALID_TOKEN, {
@@ -122,7 +128,7 @@ export const handleTokenRefresh = async (req, res, next) => {
 
     try {
       const newTokens = await userService.refreshToken(refreshToken);
-
+      console.log(newTokens)
       res.cookie(
         "accessToken",
         newTokens.data.accessToken,
@@ -133,6 +139,7 @@ export const handleTokenRefresh = async (req, res, next) => {
         newTokens.data.refreshToken,
         cookieOptions.refreshToken
       );
+      console.log(res)
 
       const { decoded } = jwtService.verifyAccessToken(
         newTokens.data.accessToken

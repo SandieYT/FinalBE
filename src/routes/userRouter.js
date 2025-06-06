@@ -8,7 +8,7 @@ router.post("/register", userController.createUser);
 router.post("/login", userController.loginUser);
 router.post("/google-login", userController.loginWithGoogle);
 router.post("/refresh-token", userController.refreshToken);
-router.post("/logout", authenticate, userController.logoutUser);
+router.post("/logout", authenticate, handleTokenRefresh, userController.logoutUser);
 router.get("/profile", authenticate, handleTokenRefresh, userController.getUser);
 router.get("/admin", authenticate, handleTokenRefresh, authorize(['admin']), userController.listUsers);
 router.delete("/delete/:userId", authenticate, handleTokenRefresh, authorize(["admin"]), userController.deleteUser);
